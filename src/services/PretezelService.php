@@ -28,8 +28,25 @@ class PretezelService
     {
         $transformedImages = [];
 
-        foreach ($transforms as $transform) {
+        foreach ($transforms as $key => $value) {
+            if (gettype($key) !== 'string') {
+                $transform = $value;
+                $returnArray = true;
+            } else {
+                $transform = $transforms;
+                $returnArray = false;
+            }
+
             if (isset($transform['position'])) {
+                if (gettype($transform['position']) === 'string' && preg_match('/(\d+)% (\d+)%/', $transform['position'])) {
+                    preg_match_all('/(\d+)% (\d+)%/', $transform['position'], $matches);
+
+                    $transform['position'] = [
+                        'x' => $matches[1][0] / 100,
+                        'y' => $matches[2][0] / 100
+                    ];
+                }
+
                 $transform['position']['x'] = $transform['position']['x'] * 100;
                 $transform['position']['y'] = $transform['position']['y'] * 100;
             }
@@ -37,7 +54,7 @@ class PretezelService
             $transformedImages[] = PretzelHelper::webPath($asset->id) . PretzelHelper::convertTransformsToFilename($asset, $transform, $defaults);
         }
 
-        return count($transformedImages) === 1 ? $transformedImages[0] : $transformedImages;
+        return $returnArray ? $transformedImages : $transformedImages[0];
     }
 
     /**
