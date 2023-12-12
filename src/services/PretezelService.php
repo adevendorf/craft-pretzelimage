@@ -1,6 +1,7 @@
 <?php
 namespace adevendorf\pretzelimage\services;
 
+use adevendorf\pretzelimage\models\ImageModel;
 use craft\helpers\ImageTransforms;
 use Intervention\Image\Image;
 use Intervention\Image\ImageManager;
@@ -24,37 +25,19 @@ class PretezelService
      * @return array|string
      * @throws HttpException
      */
-    public function url(Asset $asset, array $transforms = [], array $defaults = []): array|string
+    public function url(Asset $asset, array $transforms = [], array $defaults = []): array|ImageModel
     {
-        $transformedImages = [];
+        $images = [];
 
-        foreach ($transforms as $key => $value) {
-            if (gettype($key) !== 'string') {
-                $transform = $value;
-                $returnArray = true;
-            } else {
-                $transform = $transforms;
-                $returnArray = false;
+        if ($this->isMulti($transforms)) {
+            foreach ($transforms as $transform) {
+                $images[] = new ImageModel($asset, $transform, $defaults);
             }
-
-            if (isset($transform['position'])) {
-                if (gettype($transform['position']) === 'string' && preg_match('/(\d+)% (\d+)%/', $transform['position'])) {
-                    preg_match_all('/(\d+)% (\d+)%/', $transform['position'], $matches);
-
-                    $transform['position'] = [
-                        'x' => $matches[1][0] / 100,
-                        'y' => $matches[2][0] / 100
-                    ];
-                }
-
-                $transform['position']['x'] = $transform['position']['x'] * 100;
-                $transform['position']['y'] = $transform['position']['y'] * 100;
-            }
-
-            $transformedImages[] = PretzelHelper::webPath($asset->id) . PretzelHelper::convertTransformsToFilename($asset, $transform, $defaults);
+        } else {
+            $images = new ImageModel($asset, $transforms, $defaults);
         }
 
-        return $returnArray ? $transformedImages : $transformedImages[0];
+        return $images;
     }
 
     /**
@@ -159,5 +142,10 @@ class PretezelService
         if ($pos[1] > 100) $pos[1] = 100;
 
         return [$pos[0], $pos[1]];
+    }
+
+    private function isMulti(array $array):bool
+    {
+        return is_array($array[array_key_first($array)]);
     }
 }
