@@ -1,0 +1,33 @@
+{% import "_includes/forms" as forms %}
+
+{{ forms.textField({
+    first: true,
+    label: "Image Path",
+    name: 'imagePath',
+    value: settings.imagePath,
+    instructions: 'The available folder saved images are placed into such as https://yoursite.com/_imgs'
+}) }}
+
+
+{{ forms.lightswitchField({
+    label: "Save Generated Images",
+    name: 'writeToDisk',
+    value: 1,
+    checked: settings.writeToDisk  ? true : false,
+    instructions: 'If unchecked, images will not be saved to disk.'
+}) }}
+
+{{ forms.lightswitchField({
+    label: "Use a CDN",
+    name: 'useCdn',
+    value: 1,
+    checked: settings.useCdn  ? true : false,
+    instructions: "Toggle this if you will use a third-party CDN to pull your images."
+}) }}
+
+{{ forms.textField({
+    label: "CDN Path",
+    name: 'cdnPath',
+    value: settings.cdnPath,
+    instructions: "If you're using a CDN, you will need to change the image url from your Craft CMS instance to the CDN provider."
+}) }}

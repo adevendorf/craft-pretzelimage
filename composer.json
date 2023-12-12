@@ -1,0 +1,32 @@
+{
+    "name": "adevendorf/craft-pretzelimage",
+    "description": "Generate image transforms upon image request in realtime -- load via web server directly as public files, or combine with a CDN.",
+    "type": "craft-plugin",
+    "license": "mit",
+    "keywords": [
+        "assets",
+        "images",
+        "craftcms"
+    ],
+    "authors": [
+        {
+            "name": "Andy Devendorf",
+            "email": "andy@devendorf.com"
+        }
+    ],
+    "require": {
+        "craftcms/cms": "^3.5.0",
+        "intervention/image": "^2.7.0",
+        "ext-fileinfo": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "adevendorf\\pretzelimage\\": "src/"
+        }
+    },
+    "extra": {
+        "handle": "pretzelimage",
+        "name": "Pretzel Image",
+        "class": "adevendorf\\pretzelimage\\Plugin"
+    }
+}
