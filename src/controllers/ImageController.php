@@ -35,7 +35,6 @@ class ImageController extends Controller
 
         $imageData = Plugin::$plugin->pretzelService->generateImage($id, $filename, $transforms, $ext);
 
-
         $path = PretzelHelper::saveImage(
             $imageData->asset,
             $imageData->image,
