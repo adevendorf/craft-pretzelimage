@@ -56,7 +56,16 @@ craft.pretzel.url(asset, { width: 100, height: 50 }, { position: asset.getFocalP
     { width: 1024, ratio: 16/9 }
 ], { position:asset.getFocalPoint()|default('50% 50%') }) %}
 
-<img src="{{ images[0] }}" alt="{{ asset.title }}" />
+<img src="{{ images[0].getUrl() }}" alt="{{ asset.title }}" />
+```
+
+or 
+
+```html
+{% set asset = craft.assets().one() %}
+{% set image = craft.pretzel.url(asset,{ width: 1024, height: 1024 } }) %}
+
+<img src="{{ image.getUrl() }}" alt="{{ asset.title }}" />
 ```
 
 If multiple transformation configurations are passed, an array is returned instead of a URL string.

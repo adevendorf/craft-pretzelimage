@@ -87,18 +87,22 @@ class PretzelHelper
         }
 
         foreach ($defaults as $key => $value) {
-            if (isset($obj[$key])) {
-                $obj[$key] = self::TRANSFORM_MAPPINGS[$key] . $value;
-            } else {
-                $obj[] = self::TRANSFORM_MAPPINGS[$key] . $value;
+            if (isset(self::TRANSFORM_MAPPINGS[$key])) {
+                if (isset($obj[$key])) {
+                    $obj[$key] = self::TRANSFORM_MAPPINGS[$key] . $value;
+                } else {
+                    $obj[] = self::TRANSFORM_MAPPINGS[$key] . $value;
+                }
             }
         }
 
         foreach ($transform as $key => $value) {
-            if (isset($obj[$key])) {
-                $obj[$key] = self::TRANSFORM_MAPPINGS[$key] . $value;
-            } else {
-                $obj[] = self::TRANSFORM_MAPPINGS[$key] . $value;
+            if (isset(self::TRANSFORM_MAPPINGS[$key])) {
+                if (isset($obj[$key])) {
+                    $obj[$key] = self::TRANSFORM_MAPPINGS[$key] . $value;
+                } else {
+                    $obj[] = self::TRANSFORM_MAPPINGS[$key] . $value;
+                }
             }
         }
 
