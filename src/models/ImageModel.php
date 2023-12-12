@@ -9,8 +9,8 @@ use Intervention\Image\ImageManager;
 class ImageModel
 {
     protected $asset;
-    protected $transformations;
-    protected $defaults;
+    private $transform;
+    private $defaults;
 
     public $filename;
     public $url;
