@@ -163,7 +163,7 @@ class PretzelHelper
 
     public static function webPath(int|string $id): string
     {
-        return Craft::getAlias('@web') . self::folderPath($id);
+        return PretzelSettingHelper::webPathHost() . self::folderPath($id);
     }
 
 
@@ -183,9 +183,9 @@ class PretzelHelper
         $ratio = $asset->getWidth() / $asset->getHeight();
 
         if (isset($t['width']) && !isset($t['height'])) {
-//            if ($t['width'] > $asset->getWidth()) {
-//                $t['width'] = $asset->getWidth();
-//            }
+            if ($t['width'] > $asset->getWidth()) {
+                $t['width'] = $asset->getWidth();
+            }
 
             if ($ratio >= 1) {
                 $t['height'] = intval($t['width'] / floatval($ratio));
@@ -195,9 +195,9 @@ class PretzelHelper
         }
 
         if (isset($t['height']) && !isset($t['width'])) {
-//            if ($t['height'] > $asset->getHeight()) {
-//                $t['height'] = $asset->getHeight();
-//            }
+            if ($t['height'] > $asset->getHeight()) {
+                $t['height'] = $asset->getHeight();
+            }
 
             if ($ratio > 1) {
                 $t['width'] = intval($t['height'] * floatval($ratio));

@@ -1,8 +1,6 @@
 <?php
 namespace adevendorf\pretzelimage\services;
 
-use craft\helpers\Assets;
-use craft\helpers\FileHelper;
 use craft\helpers\ImageTransforms;
 use Intervention\Image\Image;
 use Intervention\Image\ImageManager;
@@ -81,7 +79,7 @@ class PretezelService
 
 
     /**
-     * Based on Image Intervention CropResize from https://github.com/thephpleague/glide
+     * Modified from Glide's CropResize from https://github.com/thephpleague/glide
      * Copyright (c) 2015 Jonathan Reinink <jonathan@reinink.ca>
      */
     public function runCropResize(Image $image, $width, $height, $position)

@@ -15,6 +15,8 @@ class Plugin extends CraftPlugin
 {
     public static $plugin;
 
+    const DEFAULT_PATH = "_imgs";
+
     public function init(): void
     {
         parent::init();

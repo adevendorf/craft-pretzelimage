@@ -21,7 +21,7 @@ class ImageController extends Controller
     /**
      * @throws HttpException
      */
-    public function actionGenerate($md5, $id, $filename, $transforms, $ext): Response
+    public function actionGenerate($md5, $id, $filename, $transforms, $ext): bool
     {
         if (!$id) {
             throw new HttpException(404, 'File Not Found');
@@ -35,31 +35,25 @@ class ImageController extends Controller
 
         $imageData = Plugin::$plugin->pretzelService->generateImage($id, $filename, $transforms, $ext);
 
-        if (PretzelSettingHelper::shouldSaveImage()) {
-            PretzelHelper::saveImage(
-                $imageData->asset,
-                $imageData->image,
-                $imageData->path,
-                $ext,
-                isset($imageData->transforms['quality']) ? $imageData->transforms['quality'] : 90
-            );
-        }
 
-        return $imageData->image->psrResponse(
-            substr($ext, 1),
+        $path = PretzelHelper::saveImage(
+            $imageData->asset,
+            $imageData->image,
+            $imageData->path,
+            $ext,
             isset($imageData->transforms['quality']) ? $imageData->transforms['quality'] : 90
         );
 
 
-//        $fp = fopen($path, 'rb');
-//
-//        http_response_code(200);
-//
-//        header('Content-Type: ' . mime_content_type($path));
-//        header('Content-Length: ' . filesize($path));
-//
-//        fpassthru($fp);
-//
-//        exit;
+        $fp = fopen($path, 'rb');
+
+        http_response_code(200);
+
+        header('Content-Type: ' . mime_content_type($path));
+        header('Content-Length: ' . filesize($path));
+
+        fpassthru($fp);
+
+        return true;
     }
 }

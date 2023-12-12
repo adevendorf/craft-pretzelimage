@@ -1,4 +1,4 @@
-# Pretzel Image
+# Pretzel Image for Craft CMS v3.5+
 
 Pretzel Image generates image transforms at browser request time. The resulting image is stored in a public folder. 
 Because the controller route is the same as the actual file, we let the web server serve the actual file before passing
@@ -25,7 +25,6 @@ Pretzel should work out of the box, but you can customize it.
 By default images are stored in the @web/_imgs directory,  but you can override it in your .env file with PREZTEL_PATH
 
 > PRETZEL_PATH="images"
-
 
 ### PRETZEL_HOSTS
 
@@ -96,12 +95,11 @@ mode: crop (default), fill
 
 ## Requirements
 
-This plugin requires Craft CMS 4 or later, and PHP 8.0.2 or later.
+This plugin requires Craft CMS 3.5 or later, and PHP 8.0.2 or later.
 
 ### TODO
 
 * Automatically remove old images from the file space based on age of the file.
 * Provide an option to never store the generated file.
-* Allow the definition of the CDN URL instead of using the Craft CMS Site URL.
 * Test GraphQL Support
 
