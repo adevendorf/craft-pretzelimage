@@ -129,7 +129,14 @@ class PretzelHelper
                     break;
                 case "P":
                     $value = explode('-', substr($option, 1));
-                    $transforms['position'] = $value[0] .'.'. $value[1] .'-'. $value[2] .'.'. $value[3];
+                    if (count($value) == 4) {
+                        $transforms['position'] = $value[0] . '.' . $value[1] . '-' . $value[2] . '.' . $value[3];
+                    }  elseif(count($value) == 3) {
+                        $transforms['position'] = $value[0] . '.' . $value[1] . '-' . $value[2];
+                    } elseif(count($value) == 2) {
+                        $transforms['position'] = $value[0] . '-' . $value[1];
+                    }
+                    $transforms['position'] = str_replace( ".", "-", $transforms['position']);
                     break;
                 case 'Q':
                     $transforms['quality'] = intval(substr($option, 1));
