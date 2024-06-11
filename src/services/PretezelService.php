@@ -1,11 +1,16 @@
 <?php
 namespace adevendorf\pretzelimage\services;
 
+use adevendorf\pretzelimage\helpers\TransformationHelper;
 use adevendorf\pretzelimage\models\ImageModel;
+use adevendorf\pretzelimage\models\TransformModel;
 use craft\helpers\ImageTransforms;
 use Intervention\Image\Image;
 use Intervention\Image\ImageManager;
 use yii\web\HttpException;
+
+
+use Intervention\Image\Imagick\Driver;
 
 use Craft;
 use craft\elements\Asset;
@@ -29,16 +34,23 @@ class PretezelService
     {
         $images = [];
 
+        $isSvg = str_contains($asset->mimeType, 'svg');
+
         if ($this->isMulti($transforms)) {
             foreach ($transforms as $transform) {
-                $images[] = new ImageModel($asset, $transform, $defaults);
+                $transforms = PretzelHelper::mergeTransforms($transform, $defaults);
+                $transformModel = new TransformModel($asset, $transforms);
+                $images[] = new ImageModel($asset, $transformModel);
             }
         } else {
-            $images = new ImageModel($asset, $transforms, $defaults);
+            $transforms = PretzelHelper::mergeTransforms($transforms, $defaults);
+            $transformModel = new TransformModel($asset, $transforms);
+            $images = new ImageModel($asset, $transformModel);
         }
 
         return $images;
     }
+
 
     /**
      * Returns the system path to the newly generated image in the final folder location
@@ -48,34 +60,40 @@ class PretezelService
      * @param $transforms
      * @param $ext
      *
-     * @return string
-     * @throws \craft\errors\ImageTransformException
-     * @throws \yii\base\InvalidConfigException
+     * @return object
      */
     public function generateImage($id, $filename, $transforms, $ext): object
     {
         $asset = Asset::find()->id($id)->one();
 
-        $transformations = PretzelHelper::convertTransformStringToArray($transforms);
+        $transformModel = new TransformModel($asset, $transforms);
 
-        $filename = PretzelHelper::convertTransformsToFilename($asset, $transformations);
-        $transformedPath = PretzelHelper::folderPath($id) . $filename;
+        $imageModel = new ImageModel($asset, $transformModel);
 
         $manager = new ImageManager();
 
-        $image = $manager->make($asset->getCopyOfFile());
+        if ($transformModel->background()) {
+            $image = $manager->canvas($asset->getWidth(), $asset->getHeight(), $transformModel->background())->insert($asset->getCopyOfFile());
+        } else {
+            $image = $manager->make($asset->getCopyOfFile());
+        }
 
-        $finalTransformations = PretzelHelper::ensureDimensions($transformations, $asset);
+        $final = PretzelHelper::ensureDimensions($transformModel->getTransforms(), $asset);
 
-        $image = $this->runCropResize($image, $finalTransformations['width'], $finalTransformations['height'], $finalTransformations['position']);
+        $image = $this->runCropResize($image, $final['width'], $final['height'], $final['position']);
 
         return (object) [
             'asset' => $asset,
             'image' => $image,
-            'path' => $transformedPath,
-            'transforms' => $finalTransformations,
+            'path' => $imageModel->getPath(),
+            'transforms' => $final,
+            'quality' => $transformModel->quality(),
         ];
     }
+
+
+
+
 
 
     /**
@@ -131,6 +149,7 @@ class PretezelService
         );
     }
 
+
     public function getCrop(string $position = '50-50'): array
     {
         $pos = explode('-', $position);
@@ -143,6 +162,7 @@ class PretezelService
 
         return [$pos[0], $pos[1]];
     }
+
 
     private function isMulti(array $array):bool
     {

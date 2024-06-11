@@ -16,6 +16,13 @@ In practice, this plugin works well for multi-instance Craft CMS setups on high 
 By utilizing an NFS server, you can reuse the same generated images between all the servers, then load balance the CMS 
 for image generation.
 
+## Formats
+
+- JPG: crop, resize, quality, focal point
+- PNG: crop, resize, quality, focal point
+- GIF: 
+- SVG: unmodified
+
 ## Configuration
 
 Pretzel should work out of the box, but you can customize it.
