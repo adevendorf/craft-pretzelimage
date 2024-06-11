@@ -81,15 +81,16 @@ class PretzelHelper
     }
 
 
-    public static function saveImage(Asset $image, $imageIntervention, $new, $format = 'jpg', $quality = 90)
+    public static function saveImage(Asset $image, $imageIntervention, $newFilePath, $format = 'jpg', $quality = 90)
     {
-        if (!is_dir(Craft::getAlias('@webroot') . self::folderPath($image->id))) {
-            FileHelper::createDirectory(Craft::getAlias('@webroot') . self::folderPath($image->id));
+        if (!is_dir(Craft::getAlias('@root') . '/web' . self::folderPath($image->id))) {
+            FileHelper::createDirectory(Craft::getAlias('@root') . '/web' . self::folderPath($image->id));
         }
+        dd(Craft::getAlias('@root') . '/web' . self::folderPath($image->id));
 
-        $imageIntervention->save(Craft::getAlias('@webroot') .$new, $quality);
+        $imageIntervention->save(Craft::getAlias('@root') . '/web' . $newFilePath, $quality);
 
-        return Craft::getAlias('@webroot') . $new;
+        return Craft::getAlias('@root') . '/web' . $newFilePath;
     }
 
     public static function ensureDimensions(array $t, Asset $asset): array
