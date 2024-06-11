@@ -55,7 +55,7 @@ class TransformModel
 
     public function quality()
     {
-        return isset($this->t['quality']) ? $this->clampValue($this->t['quality'], 25, 100) : false;
+        return isset($this->t['quality']) ? $this->clampValue($this->t['quality'], 25, 100) : 65;
     }
 
     public function background()
