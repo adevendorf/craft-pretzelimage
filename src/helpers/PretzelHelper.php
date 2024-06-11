@@ -86,7 +86,6 @@ class PretzelHelper
         if (!is_dir(Craft::getAlias('@root') . '/web' . self::folderPath($image->id))) {
             FileHelper::createDirectory(Craft::getAlias('@root') . '/web' . self::folderPath($image->id));
         }
-        dd(Craft::getAlias('@root') . '/web' . self::folderPath($image->id));
 
         $imageIntervention->save(Craft::getAlias('@root') . '/web' . $newFilePath, $quality);
 
