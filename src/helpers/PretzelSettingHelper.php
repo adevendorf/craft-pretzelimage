@@ -69,7 +69,7 @@ class PretzelSettingHelper
             parse_url(UrlHelper::siteHost(), PHP_URL_HOST)
         ]);
 
-        return strpos($hostname, $validHosts) !== false;
+        return strpos($validHosts, $hostname) !== false;
     }
 
 }
