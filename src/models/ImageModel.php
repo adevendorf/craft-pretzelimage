@@ -8,13 +8,13 @@ use adevendorf\pretzelimage\helpers\PretzelHelper;
 
 class ImageModel
 {
-    protected $asset;
-    protected $filename;
-    protected $url;
-    protected $extension;
-    protected $path;
-    protected $transform;
-    protected $quality;
+    public $asset;
+    public $filename;
+    public $url;
+    public $extension;
+    public $path;
+    public $transform;
+    public $quality;
 
     public function __construct(Asset $asset, TransformModel $model)
     {
