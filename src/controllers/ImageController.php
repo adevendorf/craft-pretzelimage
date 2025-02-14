@@ -18,7 +18,7 @@ use GuzzleHttp\Psr7\Response;
  */
 class ImageController extends Controller
 {
-    protected $allowAnonymous = ['copy', 'generate'];
+    protected array|bool|int $allowAnonymous = ['copy', 'generate'];
 
     public function actionCopy($md5, $id, $filename, $ext): bool
     {
@@ -61,7 +61,7 @@ class ImageController extends Controller
     /**
      * @throws HttpException
      */
-    public function actionGenerate($md5, $id, $filename, $transforms, $ext): bool
+    public function actionGenerate($md5, $id, $filename, $transforms, $ext): void
     {
         if (!$id) {
             throw new HttpException(404, 'File Not Found');
@@ -83,15 +83,17 @@ class ImageController extends Controller
             $imageData->quality,
         );
 
+        sleep(0.1);
+
         $fp = fopen($path, 'rb');
 
         http_response_code(200);
 
-        header('Content-Type: ' . mime_content_type($path));
-        header('Content-Length: ' . filesize($path));
+        header('Content-Type: ' . $imageData->image->mime(), true);
+        header('Content-Length: ' . filesize($path), true);
 
         fpassthru($fp);
 
-        return true;
+        exit;
     }
 }
