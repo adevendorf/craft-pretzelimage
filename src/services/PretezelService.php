@@ -68,7 +68,7 @@ class PretezelService
 
         $transformModel = new TransformModel($asset, $transforms);
 
-        $imageModel = new ImageModel($asset, $transformModel);
+        $imageModel = new ImageModel($asset, $transformModel, $ext);
 
         $manager = new ImageManager();
 

@@ -29,7 +29,7 @@ class PretzelHelper
     }
 
 
-    public static function makeFilename(Asset $image, TransformModel $transform): string
+    public static function makeFilename(Asset $image, TransformModel $transform, $ext): string
     {
         $extension = pathinfo($image->filename, PATHINFO_EXTENSION);
         $filename = pathinfo($image->filename, PATHINFO_FILENAME);
@@ -42,6 +42,10 @@ class PretzelHelper
 
         if ($transform->format()) {
             $extension = $transform->format();
+        }
+
+        if ($ext) {
+            $extension = str_replace('.', '', $ext);
         }
 
 //        if ($transform->position() && gettype($transform->position()) === 'array') {

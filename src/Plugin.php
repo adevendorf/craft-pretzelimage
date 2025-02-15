@@ -47,7 +47,7 @@ class Plugin extends CraftPlugin
             UrlManager::EVENT_REGISTER_SITE_URL_RULES,
             function(RegisterUrlRulesEvent $event) {
                 $event->rules[PretzelSettingHelper::imagePath() . '/<md5:.+>/<id:\d+>/<filename:.+><ext:(\.SVG|\.svg)>'] = 'pretzelimage/image/copy';
-                $event->rules[PretzelSettingHelper::imagePath() . '/<md5:.+>/<id:\d+>/<filename:.+>~<transforms:.+><ext:(\.JPG|\.jpg|\.PNG|\.png|\.JPEG|\.jpeg|\.gif|\.GIF)>'] = 'pretzelimage/image/generate';
+                $event->rules[PretzelSettingHelper::imagePath() . '/<md5:.+>/<id:\d+>/<filename:.+>~<transforms:.+><ext:(\.JPG|\.jpg|\.PNG|\.png|\.JPEG|\.jpeg|\.gif|\.GIF|\.webp|\.WEBP)>'] = 'pretzelimage/image/generate';
             }
         );
 

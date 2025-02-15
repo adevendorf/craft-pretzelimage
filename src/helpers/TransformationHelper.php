@@ -23,7 +23,7 @@ class TransformationHelper
 
     public static function isValidFormat($value)
     {
-        $valid = ['JPG', 'PNG'];
+        $valid = ['JPG', 'PNG', 'WEBP'];
 
         return in_array(strtoupper($value), $valid);
     }
@@ -69,7 +69,6 @@ class TransformationHelper
             if (isset($t['width']) && isset($t['height'])) {
                 unset($t['ratio']);
             }
- ;
 
             // set height if width and ratio are provided
             if (isset($t['width']) && !isset($t['height'])) {
