@@ -32,11 +32,11 @@ class ImageController extends Controller
             throw new HttpException(404, 'File Not Found');
         }
 
-        $referrer = parse_url(Craft::$app->getRequest()->getReferrer(), PHP_URL_HOST);
+        // $referrer = parse_url(Craft::$app->getRequest()->getReferrer(), PHP_URL_HOST);
 
-        if (!PretzelSettingHelper::isValidHost($referrer)) {
-            throw new HttpException(403, 'Unable to process request');
-        }
+        // if (!PretzelSettingHelper::isValidHost($referrer)) {
+        //     throw new HttpException(403, 'Unable to process request');
+        // }
 
         $path = PretzelHelper::folderPath($asset->id) . $filename . $ext;
 
@@ -73,11 +73,11 @@ class ImageController extends Controller
             throw new HttpException(404, 'File Not Found');
         }
 
-        $referrer = parse_url(Craft::$app->getRequest()->getReferrer(), PHP_URL_HOST);
+        // $referrer = parse_url(Craft::$app->getRequest()->getReferrer(), PHP_URL_HOST);
 
-        if (!PretzelSettingHelper::isValidHost($referrer)) {
-            throw new HttpException(403, 'Unable to process request');
-        }
+        // if (!PretzelSettingHelper::isValidHost($referrer)) {
+        //     throw new HttpException(403, 'Unable to process request');
+        // }
 
         $imageData = Plugin::$plugin->pretzelService->generateImage($id, $filename, $transforms, $ext);
 
