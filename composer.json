@@ -1,6 +1,6 @@
 {
     "name": "adevendorf/craft-pretzelimage",
-    "description": "Generate image transforms upon image request in realtime -- load via web server directly as public files, or combine with a CDN.",
+    "description": "For Craft 3.x - Generate image transforms upon image request in realtime -- load via web server directly as public files, or combine with a CDN.",
     "type": "craft-plugin",
     "license": "mit",
     "keywords": [
