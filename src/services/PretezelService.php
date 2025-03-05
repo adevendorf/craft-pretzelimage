@@ -38,12 +38,12 @@ class PretezelService
 
         if ($this->isMulti($transforms)) {
             foreach ($transforms as $transform) {
-                $transforms = PretzelHelper::mergeTransforms($transform, $defaults);
+                $transforms = $isSvg ? [] : PretzelHelper::mergeTransforms($transform, $defaults);
                 $transformModel = new TransformModel($asset, $transforms);
                 $images[] = new ImageModel($asset, $transformModel);
             }
         } else {
-            $transforms = PretzelHelper::mergeTransforms($transforms, $defaults);
+            $transforms = $isSvg ? [] : PretzelHelper::mergeTransforms($transforms, $defaults);
             $transformModel = new TransformModel($asset, $transforms);
             $images = new ImageModel($asset, $transformModel);
         }
