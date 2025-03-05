@@ -8,12 +8,12 @@ class TransformationHelper
     const TRANSFORM_MAPPINGS = [
         'width' => 'W',
         'height' => 'H',
-        'position' => 'P',
-        'quality' => 'Q',
         'mode' => 'M',
-        'format' => 'F',
+        'quality' => 'Q',
         'ratio' => 'R',
+        'format' => 'F',
         'background' => 'B',
+        'position' => 'P',
     ];
 
     public static function isHex($value)
@@ -133,8 +133,6 @@ class TransformationHelper
                     break;
             }
         }
-
-        ksort($transforms);
 
         self::validate($transforms);
 
