@@ -143,22 +143,25 @@ class TransformationHelper
     {
         $obj = [];
 
-        foreach ($transform as $key => $value) {
-            if ($key === 'position' && is_array($value)) {
-                $value = round($value['x']) . '-' . round($value['y']);
-            }
 
-            if (isset(self::TRANSFORM_MAPPINGS[$key])) {
-                if (isset($obj[$key])) {
-                    $obj[$key] = self::TRANSFORM_MAPPINGS[$key] . $value;
-                } else {
-                    $obj[] = self::TRANSFORM_MAPPINGS[$key] . $value;
+        foreach(self::TRANSFORM_MAPPINGS as $mappingName => $mappingLetter) {
+            foreach ($transform as $key => $value) {
+                if ($key == $mappingName) {
+                    if ($key === 'position' && is_array($value)) {
+                        $value = round($value['x']) . '-' . round($value['y']);
+                    }
+
+                    if (isset(self::TRANSFORM_MAPPINGS[$key])) {
+                        if (isset($obj[$key])) {
+                            $obj[$key] = self::TRANSFORM_MAPPINGS[$key] . $value;
+                        } else {
+                            $obj[] = self::TRANSFORM_MAPPINGS[$key] . $value;
+                        }
+                    }
                 }
             }
         }
-
-        sort($obj);
-
+        
         return implode('_', $obj);
     }
 

@@ -19,13 +19,11 @@ class PretzelHelper
             $arr[$key] = $value;
         }
 
-
         foreach($transforms as $key => $value) {
             $arr[$key] = $value;
         }
 
         return $arr;
-
     }
 
 
@@ -45,7 +43,7 @@ class PretzelHelper
         }
 
 //        if ($transform->position() && gettype($transform->position()) === 'array') {
-//            $transforms->setPosition = implode('-', [
+//            $defaults->setPosition = implode('-', [
 //                (str_replace('.', '-', number_format($transforms['position']['x'], 1))),
 //                (str_replace('.', '-', number_format($transforms['position']['y'], 1)))
 //            ]);
