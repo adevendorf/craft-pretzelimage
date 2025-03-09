@@ -73,6 +73,13 @@ class ImageController extends Controller
             throw new HttpException(404, 'File Not Found');
         }
 
+
+        $unique = base64_encode(random_bytes(10));
+        $logFile = Craft::getAlias('@storage') . '/logs/pretzel.log';
+        $log = $unique .': '.  $id .' - '. $filename .' - '. $transforms .' - '. $ext."\n";
+        \craft\helpers\FileHelper::writeToFile($logFile, $log, ['append' => true]);
+
+
         // $referrer = parse_url(Craft::$app->getRequest()->getReferrer(), PHP_URL_HOST);
 
         // if (!PretzelSettingHelper::isValidHost($referrer)) {
@@ -88,6 +95,9 @@ class ImageController extends Controller
             $ext,
             $imageData->quality,
         );
+
+        $log = $unique .': '.  $path ."\n";
+        \craft\helpers\FileHelper::writeToFile($logFile, $log, ['append' => true]);
 
         sleep(0.25);
 
