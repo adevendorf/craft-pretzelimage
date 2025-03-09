@@ -74,10 +74,10 @@ class ImageController extends Controller
         }
 
 
-        $unique = base64_encode(random_bytes(10));
-        $logFile = Craft::getAlias('@storage') . '/logs/pretzel.log';
-        $log = $unique .': '.  $id .' - '. $filename .' - '. $transforms .' - '. $ext."\n";
-        \craft\helpers\FileHelper::writeToFile($logFile, $log, ['append' => true]);
+//        $unique = base64_encode(random_bytes(10));
+//        $logFile = Craft::getAlias('@storage') . '/logs/pretzel.log';
+//        $log = $unique .': '.  $id .' - '. $filename .' - '. $transforms .' - '. $ext."\n";
+//        \craft\helpers\FileHelper::writeToFile($logFile, $log, ['append' => true]);
 
 
         // $referrer = parse_url(Craft::$app->getRequest()->getReferrer(), PHP_URL_HOST);
@@ -96,8 +96,8 @@ class ImageController extends Controller
             $imageData->quality,
         );
 
-        $log = $unique .': '.  $path ."\n";
-        \craft\helpers\FileHelper::writeToFile($logFile, $log, ['append' => true]);
+//        $log = $unique .': '.  $path ."\n";
+//        \craft\helpers\FileHelper::writeToFile($logFile, $log, ['append' => true]);
 
         sleep(0.25);
 

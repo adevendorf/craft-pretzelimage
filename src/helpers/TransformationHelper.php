@@ -13,6 +13,7 @@ class TransformationHelper
         'ratio' => 'R',
         'format' => 'F',
         'background' => 'B',
+        'cropzoom' => 'CZ',
         'position' => 'P',
     ];
 
@@ -130,6 +131,9 @@ class TransformationHelper
                     break;
                 case 'B':
                     $transforms['background'] = substr($option, 1);
+                    break;
+                case 'CZ':
+                    $transforms['cropzoom'] = substr($option, 1);
                     break;
             }
         }
