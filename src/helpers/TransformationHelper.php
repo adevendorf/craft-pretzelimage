@@ -70,7 +70,7 @@ class TransformationHelper
             if (isset($t['width']) && isset($t['height'])) {
                 unset($t['ratio']);
             }
- ;
+
 
             // set height if width and ratio are provided
             if (isset($t['width']) && !isset($t['height'])) {
@@ -132,8 +132,13 @@ class TransformationHelper
                 case 'B':
                     $transforms['background'] = substr($option, 1);
                     break;
+            }
+        }
+
+        foreach($options as $option) {
+            switch (substr($option, 0, 2)) {
                 case 'CZ':
-                    $transforms['cropzoom'] = substr($option, 1);
+                    $transforms['cropzoom'] = substr($option, 2);
                     break;
             }
         }
