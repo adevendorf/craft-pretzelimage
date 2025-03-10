@@ -19,17 +19,15 @@ class PretzelHelper
             $arr[$key] = $value;
         }
 
-
         foreach($transforms as $key => $value) {
             $arr[$key] = $value;
         }
 
         return $arr;
-
     }
 
 
-    public static function makeFilename(Asset $image, TransformModel $transform, $ext): string
+    public static function makeFilename(Asset $image, TransformModel $transform): string
     {
         $extension = pathinfo($image->filename, PATHINFO_EXTENSION);
         $filename = pathinfo($image->filename, PATHINFO_FILENAME);
@@ -44,12 +42,8 @@ class PretzelHelper
             $extension = $transform->format();
         }
 
-        if ($ext) {
-            $extension = str_replace('.', '', $ext);
-        }
-
 //        if ($transform->position() && gettype($transform->position()) === 'array') {
-//            $transforms->setPosition = implode('-', [
+//            $defaults->setPosition = implode('-', [
 //                (str_replace('.', '-', number_format($transforms['position']['x'], 1))),
 //                (str_replace('.', '-', number_format($transforms['position']['y'], 1)))
 //            ]);

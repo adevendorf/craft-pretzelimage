@@ -10,7 +10,6 @@ use craft\web\UrlManager;
 use yii\base\Event;
 use craft\base\Plugin as CraftPlugin;
 use craft\web\twig\variables\CraftVariable;
-use Craft;
 
 class Plugin extends CraftPlugin
 {
@@ -18,24 +17,17 @@ class Plugin extends CraftPlugin
 
     const DEFAULT_PATH = "_imgs";
 
-    public static function config(): array 
-    {
-        return [
-            'components' => [
-                'pretzelService' => ['class' => PretezelService::class]
-            ]
-        ];
-    }
-
     public function init(): void
     {
         parent::init();
 
         self::$plugin = $this;
 
-        Event::on(
-            CraftVariable::class, 
-            CraftVariable::EVENT_INIT,
+        $this->setComponents([
+            'pretzelService' => PretezelService::class
+        ]);
+
+        Event::on(CraftVariable::class, CraftVariable::EVENT_INIT,
             function(Event $event) {
                 $variable = $event->sender;
                 $variable->set('pretzel', PretzelVariable::class);
@@ -50,6 +42,5 @@ class Plugin extends CraftPlugin
                 $event->rules[PretzelSettingHelper::imagePath() . '/<md5:.+>/<id:\d+>/<filename:.+>~<transforms:.+><ext:(\.JPG|\.jpg|\.PNG|\.png|\.JPEG|\.jpeg|\.gif|\.GIF|\.webp|\.WEBP)>'] = 'pretzelimage/image/generate';
             }
         );
-
     }
 }

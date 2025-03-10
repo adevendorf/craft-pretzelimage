@@ -38,12 +38,12 @@ class PretezelService
 
         if ($this->isMulti($transforms)) {
             foreach ($transforms as $transform) {
-                $transforms = PretzelHelper::mergeTransforms($transform, $defaults);
+                $transforms = $isSvg ? [] : PretzelHelper::mergeTransforms($transform, $defaults);
                 $transformModel = new TransformModel($asset, $transforms);
                 $images[] = new ImageModel($asset, $transformModel);
             }
         } else {
-            $transforms = PretzelHelper::mergeTransforms($transforms, $defaults);
+            $transforms = $isSvg ? [] : PretzelHelper::mergeTransforms($transforms, $defaults);
             $transformModel = new TransformModel($asset, $transforms);
             $images = new ImageModel($asset, $transformModel);
         }
@@ -68,14 +68,28 @@ class PretezelService
 
         $transformModel = new TransformModel($asset, $transforms);
 
-        $imageModel = new ImageModel($asset, $transformModel, $ext);
+        $imageModel = new ImageModel($asset, $transformModel);
 
         $manager = new ImageManager();
 
-        if ($transformModel->background()) {
-            $image = $manager->canvas($asset->getWidth(), $asset->getHeight(), $transformModel->background())->insert($asset->getCopyOfFile());
+        $filePath = Craft::getAlias('@storage') . '/runtime/pretzel/' . $asset->getFilename();
+
+        if (file_exists($filePath)) {
+            $fileContents = file_get_contents($filePath);
         } else {
-            $image = $manager->make($asset->getCopyOfFile());
+            if (!file_exists(Craft::getAlias('@storage') . '/runtime/pretzel/')) {
+                mkdir(Craft::getAlias('@storage') . '/runtime/pretzel/', 0755);
+            }
+
+            $fileContents = $asset->getContents();
+
+            file_put_contents($filePath, $fileContents, LOCK_EX);
+        }
+
+        if ($transformModel->background()) {
+            $image = $manager->canvas($asset->getWidth(), $asset->getHeight(), $transformModel->background())->insert($fileContents);
+        } else {
+            $image = $manager->make($fileContents);
         }
 
         $final = PretzelHelper::ensureDimensions($transformModel->getTransforms(), $asset);

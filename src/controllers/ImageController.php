@@ -18,7 +18,7 @@ use GuzzleHttp\Psr7\Response;
  */
 class ImageController extends Controller
 {
-    protected array|bool|int $allowAnonymous = ['copy', 'generate'];
+    protected $allowAnonymous = ['copy', 'generate'];
 
     public function actionCopy($md5, $id, $filename, $ext): bool
     {
@@ -32,11 +32,11 @@ class ImageController extends Controller
             throw new HttpException(404, 'File Not Found');
         }
 
-        $referrer = parse_url(Craft::$app->getRequest()->getReferrer(), PHP_URL_HOST);
+        // $referrer = parse_url(Craft::$app->getRequest()->getReferrer(), PHP_URL_HOST);
 
-        if (!PretzelSettingHelper::isValidHost($referrer)) {
-            throw new HttpException(403, 'Unable to process request');
-        }
+        // if (!PretzelSettingHelper::isValidHost($referrer)) {
+        //     throw new HttpException(403, 'Unable to process request');
+        // }
 
         $path = PretzelHelper::folderPath($asset->id) . $filename . $ext;
 
@@ -46,16 +46,22 @@ class ImageController extends Controller
 
         rename($asset->getCopyOfFile(), Craft::getAlias('@webroot') . $path);
 
+        sleep(0.25);
+
         $fp = fopen(Craft::getAlias('@webroot') . $path, 'rb');
 
         http_response_code(200);
 
         header('Content-Type: ' . mime_content_type(Craft::getAlias('@webroot') . $path));
         header('Content-Length: ' . filesize(Craft::getAlias('@webroot') . $path));
+        header('Expires: Sun, 01 Jan 2014 00:00:00 GMT');
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+        header('Cache-Control: post-check=0, pre-check=0', FALSE);
+        header('Pragma: no-cache');
 
         fpassthru($fp);
 
-        return true;
+        exit;
     }
 
     /**
@@ -67,6 +73,19 @@ class ImageController extends Controller
             throw new HttpException(404, 'File Not Found');
         }
 
+
+//        $unique = base64_encode(random_bytes(10));
+//        $logFile = Craft::getAlias('@storage') . '/logs/pretzel.log';
+//        $log = $unique .': '.  $id .' - '. $filename .' - '. $transforms .' - '. $ext."\n";
+//        \craft\helpers\FileHelper::writeToFile($logFile, $log, ['append' => true]);
+
+
+        // $referrer = parse_url(Craft::$app->getRequest()->getReferrer(), PHP_URL_HOST);
+
+        // if (!PretzelSettingHelper::isValidHost($referrer)) {
+        //     throw new HttpException(403, 'Unable to process request');
+        // }
+
         $imageData = Plugin::$plugin->pretzelService->generateImage($id, $filename, $transforms, $ext);
 
         $path = PretzelHelper::saveImage(
@@ -77,14 +96,21 @@ class ImageController extends Controller
             $imageData->quality,
         );
 
-        sleep(0.1);
+//        $log = $unique .': '.  $path ."\n";
+//        \craft\helpers\FileHelper::writeToFile($logFile, $log, ['append' => true]);
+
+        sleep(0.25);
 
         $fp = fopen($path, 'rb');
 
         http_response_code(200);
 
-        header('Content-Type: ' . $imageData->image->mime(), true);
-        header('Content-Length: ' . filesize($path), true);
+        header('Content-Type: ' . mime_content_type($path));
+        header('Content-Length: ' . filesize($path));
+        header('Expires: Sun, 01 Jan 2014 00:00:00 GMT');
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+        header('Cache-Control: post-check=0, pre-check=0', FALSE);
+        header('Pragma: no-cache');
 
         fpassthru($fp);
 

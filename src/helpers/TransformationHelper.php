@@ -8,12 +8,13 @@ class TransformationHelper
     const TRANSFORM_MAPPINGS = [
         'width' => 'W',
         'height' => 'H',
-        'position' => 'P',
-        'quality' => 'Q',
         'mode' => 'M',
-        'format' => 'F',
+        'quality' => 'Q',
         'ratio' => 'R',
+        'format' => 'F',
         'background' => 'B',
+        'cropzoom' => 'CZ',
+        'position' => 'P',
     ];
 
     public static function isHex($value)
@@ -69,6 +70,7 @@ class TransformationHelper
             if (isset($t['width']) && isset($t['height'])) {
                 unset($t['ratio']);
             }
+
 
             // set height if width and ratio are provided
             if (isset($t['width']) && !isset($t['height'])) {
@@ -133,7 +135,13 @@ class TransformationHelper
             }
         }
 
-        ksort($transforms);
+        foreach($options as $option) {
+            switch (substr($option, 0, 2)) {
+                case 'CZ':
+                    $transforms['cropzoom'] = substr($option, 2);
+                    break;
+            }
+        }
 
         self::validate($transforms);
 
@@ -144,22 +152,25 @@ class TransformationHelper
     {
         $obj = [];
 
-        foreach ($transform as $key => $value) {
-            if ($key === 'position' && is_array($value)) {
-                $value = round($value['x']) . '-' . round($value['y']);
-            }
 
-            if (isset(self::TRANSFORM_MAPPINGS[$key])) {
-                if (isset($obj[$key])) {
-                    $obj[$key] = self::TRANSFORM_MAPPINGS[$key] . $value;
-                } else {
-                    $obj[] = self::TRANSFORM_MAPPINGS[$key] . $value;
+        foreach(self::TRANSFORM_MAPPINGS as $mappingName => $mappingLetter) {
+            foreach ($transform as $key => $value) {
+                if ($key == $mappingName) {
+                    if ($key === 'position' && is_array($value)) {
+                        $value = round($value['x']) . '-' . round($value['y']);
+                    }
+
+                    if (isset(self::TRANSFORM_MAPPINGS[$key])) {
+                        if (isset($obj[$key])) {
+                            $obj[$key] = self::TRANSFORM_MAPPINGS[$key] . $value;
+                        } else {
+                            $obj[] = self::TRANSFORM_MAPPINGS[$key] . $value;
+                        }
+                    }
                 }
             }
         }
-
-        sort($obj);
-
+        
         return implode('_', $obj);
     }
 

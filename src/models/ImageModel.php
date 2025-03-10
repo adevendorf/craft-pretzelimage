@@ -16,12 +16,12 @@ class ImageModel
     public $transform;
     public $quality;
 
-    public function __construct(Asset $asset, TransformModel $model, $ext)
+    public function __construct(Asset $asset, TransformModel $model)
     {
         $this->asset = $asset;
         $this->transform = $model;
-        $this->extension = str_replace('.', '', $ext); 
-        $this->filename = PretzelHelper::makeFilename($asset, $model, $ext);
+        $this->extension = $model->format() ?: $asset->getExtension();
+        $this->filename = PretzelHelper::makeFilename($asset, $model);
         $this->url = PretzelHelper::webPath($asset->id) . $this->filename;
         $this->path = PretzelHelper::folderPath($asset->id) . $this->filename;
         $this->quality = $this->transform->quality() ?: 90;
