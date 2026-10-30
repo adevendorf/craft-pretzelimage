@@ -60,16 +60,16 @@ class PretzelSettingHelper
             return true;
         }
 
-        if (!$hostname) {
-            return false;
-        }
-
         $validHosts = implode(',', [
             getenv('PRETZEL_HOSTS'),
             parse_url(UrlHelper::siteHost(), PHP_URL_HOST)
         ]);
 
-        return strpos($validHosts, $hostname) !== false;
+        if (strpos($validHosts, $hostname) !== false) {
+            return true;
+        }
+
+        return false;
     }
 
 }
