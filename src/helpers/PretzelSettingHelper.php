@@ -1,10 +1,9 @@
 <?php
 namespace adevendorf\pretzelimage\helpers;
 
-use adevendorf\pretzelimage\Plugin;
 use Craft;
-use craft\elements\Asset;
-use craft\helpers\FileHelper;
+use adevendorf\pretzelimage\Plugin;
+use craft\helpers\App;
 use craft\helpers\UrlHelper;
 
 class PretzelSettingHelper
@@ -21,25 +20,25 @@ class PretzelSettingHelper
 
     public static function shouldSaveImage()
     {
-        return getenv('PRETZEL_SAVE_IMG') && getenv('PRETZEL_SAVE_IMG') == 'false' ? false : true;
+        return App::env('PRETZEL_SAVE_IMG') !== 'false';
     }
 
 
     public static function imagePath()
     {
-        return getenv('PRETZEL_PATH') ?: "_imgs";
+        return App::env('PRETZEL_PATH') ?: Plugin::DEFAULT_PATH;
     }
 
 
     public static function useCdn()
     {
-        return getenv('PRETZEL_CDN') ? true : false;
+        return (bool) App::env('PRETZEL_CDN');
     }
 
 
     public static function cdnPath()
     {
-        return self::removeTrailingSlash(getenv('PRETZEL_CDN'));
+        return self::removeTrailingSlash((string) App::env('PRETZEL_CDN'));
     }
 
 
@@ -65,7 +64,7 @@ class PretzelSettingHelper
         }
 
         $validHosts = implode(',', [
-            getenv('PRETZEL_HOSTS'),
+            App::env('PRETZEL_HOSTS'),
             parse_url(UrlHelper::siteHost(), PHP_URL_HOST)
         ]);
 

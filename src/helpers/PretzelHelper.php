@@ -6,8 +6,8 @@ use adevendorf\pretzelimage\Plugin;
 use Craft;
 use craft\elements\Asset;
 use craft\helpers\FileHelper;
-use craft\helpers\UrlHelper;
-use adevendorf\pretzelimage\helpers\TransformationHelper;
+use Intervention\Image\Encoders\{AvifEncoder, GifEncoder, JpegEncoder, PngEncoder, WebpEncoder};
+use Intervention\Image\Interfaces\ImageInterface;
 
 class PretzelHelper
 {
@@ -27,34 +27,24 @@ class PretzelHelper
     }
 
 
+    public static function isSvg(Asset $asset): bool
+    {
+        return strtolower((string) $asset->getExtension()) === 'svg';
+    }
+
+
     public static function makeFilename(Asset $image, TransformModel $transform): string
     {
-        $extension = pathinfo($image->filename, PATHINFO_EXTENSION);
         $filename = pathinfo($image->filename, PATHINFO_FILENAME);
 
-        $isSvg = str_contains($image->getMimetype(), 'svg');
-
-        if ($isSvg) {
-            $extension = 'svg';
+        // SVGs can't be transformed: always the plain filename, no "~transforms" segment
+        if (self::isSvg($image)) {
+            return "{$filename}.svg";
         }
 
-        if ($transform->format()) {
-            $extension = $transform->format();
-        }
+        $extension = strtolower($transform->format() ?: pathinfo($image->filename, PATHINFO_EXTENSION));
 
-//        if ($transform->position() && gettype($transform->position()) === 'array') {
-//            $defaults->setPosition = implode('-', [
-//                (str_replace('.', '-', number_format($transforms['position']['x'], 1))),
-//                (str_replace('.', '-', number_format($transforms['position']['y'], 1)))
-//            ]);
-//        }
-
-        return implode([
-            "{$filename}",
-            ((($isSvg && $transform->format()) || !$isSvg) ? "~" : ''),
-            $transform->toTransformString(),
-            ".{$extension}"
-        ]);
+        return $filename . '~' . $transform->toTransformString() . ".{$extension}";
     }
 
     public static function additionalFolderPaths($id): string
@@ -67,7 +57,7 @@ class PretzelHelper
 
     public static function folderPath(int|string $id): string
     {
-        $webPath = getEnv('PRETZEL_PATH') ?: Plugin::DEFAULT_PATH;
+        $webPath = PretzelSettingHelper::imagePath();
 
         return '/' . $webPath . '/' . self::additionalFolderPaths($id);
     }
@@ -79,48 +69,55 @@ class PretzelHelper
     }
 
 
-    public static function saveImage(Asset $image, $imageIntervention, $newFilePath, $format = 'jpg', $quality = 90)
+    /**
+     * Encodes the image in the format of $newFilePath's extension and writes it under the webroot.
+     */
+    public static function saveImage(Asset $image, ImageInterface $imageIntervention, string $newFilePath, int $quality = 90): string
     {
-        if (!is_dir(Craft::getAlias('@root') . '/web' . self::folderPath($image->id))) {
-            FileHelper::createDirectory(Craft::getAlias('@root') . '/web' . self::folderPath($image->id));
-        }
+        $fullPath = Craft::getAlias('@webroot') . $newFilePath;
 
-        $imageIntervention->save(Craft::getAlias('@root') . '/web' . $newFilePath, $quality);
+        FileHelper::createDirectory(dirname($fullPath));
 
-        return Craft::getAlias('@root') . '/web' . $newFilePath;
+        $encoded = match (strtolower(pathinfo($newFilePath, PATHINFO_EXTENSION))) {
+            'png' => $imageIntervention->encode(new PngEncoder()),
+            'webp' => $imageIntervention->encode(new WebpEncoder(quality: $quality)),
+            'avif' => $imageIntervention->encode(new AvifEncoder(quality: $quality)),
+            'gif' => $imageIntervention->encode(new GifEncoder()),
+            default => $imageIntervention->encode(new JpegEncoder(quality: $quality)),
+        };
+
+        // write to a temp file first so a concurrent request never serves a partial image
+        $tmp = $fullPath . '.' . uniqid('', true) . '.tmp';
+        file_put_contents($tmp, (string) $encoded);
+        rename($tmp, $fullPath);
+
+        return $fullPath;
     }
 
     public static function ensureDimensions(array $t, Asset $asset): array
     {
-        $ratio = $asset->getWidth() / $asset->getHeight();
+        $assetWidth = (int) $asset->getWidth();
+        $assetHeight = (int) $asset->getHeight();
+
+        if (!$assetWidth || !$assetHeight) {
+            throw new \yii\web\HttpException(404, 'File Not Found');
+        }
+
+        $ratio = $assetWidth / $assetHeight;
 
         if (isset($t['width']) && !isset($t['height'])) {
-            if ($t['width'] > $asset->getWidth()) {
-                $t['width'] = $asset->getWidth();
-            }
-
-            if ($ratio >= 1) {
-                $t['height'] = intval($t['width'] / floatval($ratio));
-            } else {
-                $t['height'] = intval($t['width'] * floatval($ratio));
-            }
+            $t['width'] = min($t['width'], $assetWidth);
+            $t['height'] = max(1, intval($t['width'] / $ratio));
         }
 
         if (isset($t['height']) && !isset($t['width'])) {
-            if ($t['height'] > $asset->getHeight()) {
-                $t['height'] = $asset->getHeight();
-            }
-
-            if ($ratio > 1) {
-                $t['width'] = intval($t['height'] * floatval($ratio));
-            } else {
-                $t['width'] = intval($t['height'] / floatval($ratio));
-            }
+            $t['height'] = min($t['height'], $assetHeight);
+            $t['width'] = max(1, intval($t['height'] * $ratio));
         }
 
         if (!isset($t['height']) && !isset($t['width'])) {
-            $t['height'] = $asset->getHeight();
-            $t['width'] = $asset->getWidth();
+            $t['height'] = $assetHeight;
+            $t['width'] = $assetWidth;
         }
 
         return $t;

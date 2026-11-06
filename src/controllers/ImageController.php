@@ -2,118 +2,98 @@
 namespace adevendorf\pretzelimage\controllers;
 
 use adevendorf\pretzelimage\helpers\PretzelHelper;
-use adevendorf\pretzelimage\helpers\PretzelSettingHelper;
+use adevendorf\pretzelimage\models\ImageModel;
+use adevendorf\pretzelimage\models\TransformModel;
+use adevendorf\pretzelimage\Plugin;
 use Craft;
-
 use craft\elements\Asset;
 use craft\helpers\FileHelper;
 use craft\web\Controller;
+use craft\web\Response;
 use yii\web\HttpException;
-
-use adevendorf\pretzelimage\Plugin;
-use GuzzleHttp\Psr7\Response;
 
 /**
  * Class ImageController
  */
 class ImageController extends Controller
 {
-    protected $allowAnonymous = ['copy', 'generate'];
+    protected array|bool|int $allowAnonymous = ['copy', 'generate'];
 
-    public function actionCopy($md5, $id, $filename, $ext): bool
+    /**
+     * Copies an SVG, unmodified, to the public folder. SVGs can't be transformed.
+     *
+     * @throws HttpException
+     */
+    public function actionCopy(string $md5, int $id, string $filename, string $ext): Response
     {
-        if (!$id) {
+        $asset = Asset::find()->id($id)->kind('image')->one();
+
+        if (!$asset || !PretzelHelper::isSvg($asset) || !$this->isValidFolder($md5, $id)) {
             throw new HttpException(404, 'File Not Found');
         }
 
-        $asset = Asset::find()->id($id)->one();
+        $imageModel = new ImageModel($asset, new TransformModel($asset, []));
 
-        if (!$asset) {
+        // the requested URL must be the one we would have generated for this asset
+        if ($filename . $ext !== $imageModel->getFilename()) {
             throw new HttpException(404, 'File Not Found');
         }
 
-        // $referrer = parse_url(Craft::$app->getRequest()->getReferrer(), PHP_URL_HOST);
+        $fullPath = Craft::getAlias('@webroot') . $imageModel->getPath();
 
-        // if (!PretzelSettingHelper::isValidHost($referrer)) {
-        //     throw new HttpException(403, 'Unable to process request');
-        // }
+        FileHelper::createDirectory(dirname($fullPath));
 
-        $path = PretzelHelper::folderPath($asset->id) . $filename . $ext;
+        // write to a temp file first so a concurrent request never serves a partial file
+        $tmp = $fullPath . '.' . uniqid('', true) . '.tmp';
+        file_put_contents($tmp, $asset->getContents());
+        rename($tmp, $fullPath);
 
-        if (!is_dir(Craft::getAlias('@webroot') . PretzelHelper::folderPath($asset->id))) {
-            FileHelper::createDirectory(Craft::getAlias('@webroot') . PretzelHelper::folderPath($asset->id));
-        }
-
-        rename($asset->getCopyOfFile(), Craft::getAlias('@webroot') . $path);
-
-        sleep(0.25);
-
-        $fp = fopen(Craft::getAlias('@webroot') . $path, 'rb');
-
-        http_response_code(200);
-
-        header('Content-Type: ' . mime_content_type(Craft::getAlias('@webroot') . $path));
-        header('Content-Length: ' . filesize(Craft::getAlias('@webroot') . $path));
-        header('Expires: Sun, 01 Jan 2014 00:00:00 GMT');
-        header('Cache-Control: no-store, no-cache, must-revalidate');
-        header('Cache-Control: post-check=0, pre-check=0', FALSE);
-        header('Pragma: no-cache');
-
-        fpassthru($fp);
-
-        exit;
+        return $this->sendImage($fullPath, 'image/svg+xml');
     }
 
     /**
      * @throws HttpException
      */
-    public function actionGenerate($md5, $id, $filename, $transforms, $ext): void
+    public function actionGenerate(string $md5, int $id, string $filename, string $transforms, string $ext): Response
     {
-        if (!$id) {
+        if (!$this->isValidFolder($md5, $id)) {
             throw new HttpException(404, 'File Not Found');
         }
 
-
-//        $unique = base64_encode(random_bytes(10));
-//        $logFile = Craft::getAlias('@storage') . '/logs/pretzel.log';
-//        $log = $unique .': '.  $id .' - '. $filename .' - '. $transforms .' - '. $ext."\n";
-//        \craft\helpers\FileHelper::writeToFile($logFile, $log, ['append' => true]);
-
-
-        // $referrer = parse_url(Craft::$app->getRequest()->getReferrer(), PHP_URL_HOST);
-
-        // if (!PretzelSettingHelper::isValidHost($referrer)) {
-        //     throw new HttpException(403, 'Unable to process request');
-        // }
-
         $imageData = Plugin::$plugin->pretzelService->generateImage($id, $filename, $transforms, $ext);
 
+        if ($filename !== pathinfo($imageData->asset->filename, PATHINFO_FILENAME)) {
+            throw new HttpException(404, 'File Not Found');
+        }
+
+        // Save under exactly the requested URL (not the re-normalised transform string), so the
+        // web server finds the static file on the next request.
         $path = PretzelHelper::saveImage(
             $imageData->asset,
             $imageData->image,
-            $imageData->path,
-            $ext,
+            PretzelHelper::folderPath($id) . $filename . '~' . $transforms . strtolower($ext),
             $imageData->quality,
         );
 
-//        $log = $unique .': '.  $path ."\n";
-//        \craft\helpers\FileHelper::writeToFile($logFile, $log, ['append' => true]);
+        return $this->sendImage($path, FileHelper::getMimeType($path) ?? 'application/octet-stream');
+    }
 
-        sleep(0.25);
+    private function isValidFolder(string $md5, int $id): bool
+    {
+        return $md5 === substr(md5("image_{$id}"), 0, 2);
+    }
 
-        $fp = fopen($path, 'rb');
+    /**
+     * Streams the freshly written file. Later requests are served by the web server directly.
+     */
+    private function sendImage(string $path, string $mimeType): Response
+    {
+        $response = Craft::$app->getResponse();
+        $response->setCacheHeaders();
 
-        http_response_code(200);
-
-        header('Content-Type: ' . mime_content_type($path));
-        header('Content-Length: ' . filesize($path));
-        header('Expires: Sun, 01 Jan 2014 00:00:00 GMT');
-        header('Cache-Control: no-store, no-cache, must-revalidate');
-        header('Cache-Control: post-check=0, pre-check=0', FALSE);
-        header('Pragma: no-cache');
-
-        fpassthru($fp);
-
-        exit;
+        return $response->sendFile($path, basename($path), [
+            'mimeType' => $mimeType,
+            'inline' => true,
+        ]);
     }
 }

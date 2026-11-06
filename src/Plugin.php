@@ -13,19 +13,24 @@ use craft\web\twig\variables\CraftVariable;
 
 class Plugin extends CraftPlugin
 {
-    public static $plugin;
+    public static ?self $plugin = null;
 
     const DEFAULT_PATH = "_imgs";
+
+    public static function config(): array
+    {
+        return [
+            'components' => [
+                'pretzelService' => PretezelService::class,
+            ],
+        ];
+    }
 
     public function init(): void
     {
         parent::init();
 
         self::$plugin = $this;
-
-        $this->setComponents([
-            'pretzelService' => PretezelService::class
-        ]);
 
         Event::on(CraftVariable::class, CraftVariable::EVENT_INIT,
             function(Event $event) {
@@ -38,8 +43,11 @@ class Plugin extends CraftPlugin
             UrlManager::class,
             UrlManager::EVENT_REGISTER_SITE_URL_RULES,
             function(RegisterUrlRulesEvent $event) {
-                $event->rules[PretzelSettingHelper::imagePath() . '/<md5:.+>/<id:\d+>/<filename:.+><ext:(\.SVG|\.svg)>'] = 'pretzelimage/image/copy';
-                $event->rules[PretzelSettingHelper::imagePath() . '/<md5:.+>/<id:\d+>/<filename:.+>~<transforms:.+><ext:(\.JPG|\.jpg|\.PNG|\.png|\.JPEG|\.jpeg|\.gif|\.GIF|\.webp|\.WEBP)>'] = 'pretzelimage/image/generate';
+                $path = PretzelSettingHelper::imagePath();
+
+                // SVGs can't be transformed: they are copied unmodified (no "~transforms" segment)
+                $event->rules[$path . '/<md5:[a-f0-9]{2}>/<id:\d+>/<filename:[^/]+><ext:\.(?i:svg)>'] = 'pretzelimage/image/copy';
+                $event->rules[$path . '/<md5:[a-f0-9]{2}>/<id:\d+>/<filename:[^/]+?>~<transforms:[^/~]+><ext:\.(?i:jpe?g|png|gif|webp|avif)>'] = 'pretzelimage/image/generate';
             }
         );
     }

@@ -1,6 +1,6 @@
 {
     "name": "adevendorf/craft-pretzelimage",
-    "description": "For Craft 3.x - Generate image transforms upon image request in realtime -- load via web server directly as public files, or combine with a CDN.",
+    "description": "For Craft 4.x - Generate image transforms upon image request in realtime -- load via web server directly as public files, or combine with a CDN.",
     "type": "craft-plugin",
     "license": "mit",
     "keywords": [
@@ -15,8 +15,9 @@
         }
     ],
     "require": {
-        "craftcms/cms": "^3.0.0",
-        "intervention/image": "^2.7.0",
+        "php": "^8.3",
+        "craftcms/cms": "^4.0.0",
+        "intervention/image": "^4.0.0",
         "ext-fileinfo": "*"
     },
     "autoload": {
@@ -28,5 +29,18 @@
         "handle": "pretzelimage",
         "name": "Pretzel Image",
         "class": "adevendorf\\pretzelimage\\Plugin"
+    },
+    "suggest": {
+        "ext-imagick": "Preferred image driver (AVIF/WebP support depends on the build)",
+        "ext-gd": "Fallback image driver"
+    },
+    "require-dev": {
+        "craftcms/ecs": "dev-main"
+    },
+    "config": {
+        "allow-plugins": {
+            "yiisoft/yii2-composer": true,
+            "craftcms/plugin-installer": true
+        }
     }
 }

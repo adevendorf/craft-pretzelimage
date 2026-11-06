@@ -1,21 +1,15 @@
 <?php
 namespace adevendorf\pretzelimage\services;
 
-use adevendorf\pretzelimage\helpers\TransformationHelper;
 use adevendorf\pretzelimage\models\ImageModel;
 use adevendorf\pretzelimage\models\TransformModel;
-use craft\helpers\ImageTransforms;
-use Intervention\Image\Image;
-use Intervention\Image\ImageManager;
-use yii\web\HttpException;
-
-
-use Intervention\Image\Imagick\Driver;
-
 use Craft;
 use craft\elements\Asset;
-use craft\helpers\ImageTransforms as TransformHelper;
-use craft\imagetransforms\ImageTransformer;
+use Intervention\Image\Drivers\Gd\Driver as GdDriver;
+use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Interfaces\ImageInterface;
+use yii\web\HttpException;
 
 use adevendorf\pretzelimage\helpers\PretzelHelper;
 
@@ -34,18 +28,17 @@ class PretezelService
     {
         $images = [];
 
-        $isSvg = str_contains($asset->mimeType, 'svg');
+        // SVGs can't be transformed, so they always get the plain, untransformed URL
+        $isSvg = PretzelHelper::isSvg($asset);
 
         if ($this->isMulti($transforms)) {
             foreach ($transforms as $transform) {
-                $transforms = $isSvg ? [] : PretzelHelper::mergeTransforms($transform, $defaults);
-                $transformModel = new TransformModel($asset, $transforms);
-                $images[] = new ImageModel($asset, $transformModel);
+                $merged = $isSvg ? [] : PretzelHelper::mergeTransforms($transform, $defaults);
+                $images[] = new ImageModel($asset, new TransformModel($asset, $merged));
             }
         } else {
-            $transforms = $isSvg ? [] : PretzelHelper::mergeTransforms($transforms, $defaults);
-            $transformModel = new TransformModel($asset, $transforms);
-            $images = new ImageModel($asset, $transformModel);
+            $merged = $isSvg ? [] : PretzelHelper::mergeTransforms($transforms, $defaults);
+            $images = new ImageModel($asset, new TransformModel($asset, $merged));
         }
 
         return $images;
@@ -64,37 +57,30 @@ class PretezelService
      */
     public function generateImage($id, $filename, $transforms, $ext): object
     {
-        $asset = Asset::find()->id($id)->one();
+        $asset = Asset::find()->id($id)->kind('image')->one();
+
+        // SVGs are served by the copy action; they can't be transformed
+        if (!$asset || PretzelHelper::isSvg($asset)) {
+            throw new HttpException(404, 'File Not Found');
+        }
 
         $transformModel = new TransformModel($asset, $transforms);
 
         $imageModel = new ImageModel($asset, $transformModel);
 
-        $manager = new ImageManager();
+        $manager = new ImageManager($this->driver());
 
-        $filePath = Craft::getAlias('@storage') . '/runtime/pretzel/' . $asset->getFilename();
-
-        if (file_exists($filePath)) {
-            $fileContents = file_get_contents($filePath);
-        } else {
-            if (!file_exists(Craft::getAlias('@storage') . '/runtime/pretzel/')) {
-                mkdir(Craft::getAlias('@storage') . '/runtime/pretzel/', 0755);
-            }
-
-            $fileContents = $asset->getContents();
-
-            file_put_contents($filePath, $fileContents, LOCK_EX);
-        }
+        // Intervention 4 auto-orients using EXIF on decode
+        $image = $manager->decodeBinary($asset->getContents());
 
         if ($transformModel->background()) {
-            $image = $manager->canvas($asset->getWidth(), $asset->getHeight(), $transformModel->background())->insert($fileContents);
-        } else {
-            $image = $manager->make($fileContents);
+            // flatten transparent areas onto the background color
+            $image->fillTransparentAreas($transformModel->background());
         }
 
         $final = PretzelHelper::ensureDimensions($transformModel->getTransforms(), $asset);
 
-        $image = $this->runCropResize($image, $final['width'], $final['height'], $final['position']);
+        $image = $this->runCropResize($image, $final['width'], $final['height'], $final['position'] ?? '50-50');
 
         return (object) [
             'asset' => $asset,
@@ -106,20 +92,31 @@ class PretezelService
     }
 
 
+    /**
+     * Imagick when available, otherwise GD. Override with PRETZEL_DRIVER=gd|imagick.
+     */
+    private function driver(): GdDriver|ImagickDriver
+    {
+        $preferred = strtolower((string) \craft\helpers\App::env('PRETZEL_DRIVER'));
 
+        if ($preferred === 'gd' || ($preferred !== 'imagick' && !extension_loaded('imagick'))) {
+            return new GdDriver();
+        }
 
+        return new ImagickDriver();
+    }
 
 
     /**
      * Modified from Glide's CropResize from https://github.com/thephpleague/glide
      * Copyright (c) 2015 Jonathan Reinink <jonathan@reinink.ca>
      */
-    public function runCropResize(Image $image, $width, $height, $position)
+    public function runCropResize(ImageInterface $image, $width, $height, $position): ImageInterface
     {
         [$offset_percentage_x, $offset_percentage_y] = $this->getCrop($position);
 
-        if ($width > $image->getWidth()) $width = $image->getWidth();
-        if ($height > $image->getHeight()) $height = $image->getHeight();
+        $width = min((int) $width, $image->width());
+        $height = min((int) $height, $image->height());
 
         $resize_width = $width;
         $resize_height = $width * ($image->height() / $image->width());
@@ -129,44 +126,24 @@ class PretezelService
             $resize_height = $height;
         }
 
-        $image->resize($resize_width, $resize_height, function ($constraint) {
-            $constraint->aspectRatio();
-        });
+        $image->resize((int) ceil($resize_width), (int) ceil($resize_height));
+
+        $max_offset_x = max(0, $image->width() - $width);
+        $max_offset_y = max(0, $image->height() - $height);
 
         $offset_x = (int) (($image->width() * $offset_percentage_x / 100) - ($width / 2));
         $offset_y = (int) (($image->height() * $offset_percentage_y / 100) - ($height / 2));
 
-        $max_offset_x = $image->width() - $width;
-        $max_offset_y = $image->height() - $height;
+        $offset_x = max(0, min($offset_x, $max_offset_x));
+        $offset_y = max(0, min($offset_y, $max_offset_y));
 
-        if ($offset_x < 0) {
-            $offset_x = 0;
-        }
-
-        if ($offset_y < 0) {
-            $offset_y = 0;
-        }
-
-        if ($offset_x > $max_offset_x) {
-            $offset_x = $max_offset_x;
-        }
-
-        if ($offset_y > $max_offset_y) {
-            $offset_y = $max_offset_y;
-        }
-
-        return $image->crop(
-            $width,
-            $height,
-            $offset_x,
-            $offset_y
-        );
+        return $image->crop($width, $height, $offset_x, $offset_y);
     }
 
 
     public function getCrop(string $position = '50-50'): array
     {
-        $pos = explode('-', $position);
+        $pos = array_pad(explode('-', $position), 2, 50);
 
         if ($pos[0] < 0) $pos[0] = 0;
         if ($pos[0] > 100) $pos[0] = 100;
@@ -174,12 +151,12 @@ class PretezelService
         if ($pos[1] < 0) $pos[1] = 0;
         if ($pos[1] > 100) $pos[1] = 100;
 
-        return [$pos[0], $pos[1]];
+        return [(float) $pos[0], (float) $pos[1]];
     }
 
 
     private function isMulti(array $array):bool
     {
-        return is_array($array[array_key_first($array)]);
+        return $array !== [] && is_array(reset($array));
     }
 }

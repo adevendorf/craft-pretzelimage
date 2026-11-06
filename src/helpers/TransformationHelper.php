@@ -24,13 +24,21 @@ class TransformationHelper
 
     public static function isValidFormat($value)
     {
-        $valid = ['JPG', 'PNG', 'WEBP'];
+        $valid = ['JPG', 'JPEG', 'PNG', 'WEBP', 'AVIF', 'GIF'];
 
         return in_array(strtoupper($value), $valid);
     }
 
+    public const MAX_DIMENSION = 5000;
+
     public static function validate($t)
     {
+        foreach (['width', 'height'] as $dimension) {
+            if (isset($t[$dimension]) && ($t[$dimension] < 1 || $t[$dimension] > self::MAX_DIMENSION)) {
+                throw new HttpException(400, 'Invalid Dimension Transformation');
+            }
+        }
+
         if (isset($t['format'])) {
             if (!self::isValidFormat($t['format'])) {
                 throw new HttpException(500, 'Invalid Format Transformation');
@@ -178,6 +186,7 @@ class TransformationHelper
     public static function formatPosition($value)
     {
         $asArray = explode('-', $value);
+        $position = '50-50';
 
         if (count($asArray) == 4) {
             $position = $asArray[0] . '.' .$asArray[1] . '-' .$asArray[2] . '.' .$asArray[3];
