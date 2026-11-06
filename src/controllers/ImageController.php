@@ -2,6 +2,7 @@
 namespace adevendorf\pretzelimage\controllers;
 
 use adevendorf\pretzelimage\helpers\PretzelHelper;
+use adevendorf\pretzelimage\helpers\PretzelSettingHelper;
 use adevendorf\pretzelimage\models\ImageModel;
 use adevendorf\pretzelimage\models\TransformModel;
 use adevendorf\pretzelimage\Plugin;
@@ -41,7 +42,7 @@ class ImageController extends Controller
 
         $contents = $asset->getContents();
 
-        PretzelHelper::writeFile(Craft::getAlias('@webroot') . $imageModel->getPath(), $contents);
+        PretzelHelper::writeFile(PretzelSettingHelper::webRoot() . $imageModel->getPath(), $contents);
 
         return $this->sendImage($contents, $imageModel->getFilename(), 'image/svg+xml');
     }

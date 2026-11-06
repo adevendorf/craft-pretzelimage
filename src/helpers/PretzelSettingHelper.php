@@ -5,6 +5,7 @@ use Craft;
 use adevendorf\pretzelimage\Plugin;
 use craft\helpers\App;
 use craft\helpers\UrlHelper;
+use yii\web\ServerErrorHttpException;
 
 class PretzelSettingHelper
 {
@@ -21,6 +22,31 @@ class PretzelSettingHelper
     public static function shouldSaveImage()
     {
         return App::env('PRETZEL_SAVE_IMG') !== 'false';
+    }
+
+
+    /**
+     * Local filesystem directory that is served as the site's web root.
+     *
+     * @webroot is only trusted if it is a real local directory (some sites alias it to a URL).
+     *
+     * @throws ServerErrorHttpException
+     */
+    public static function webRoot(): string
+    {
+        $candidates = [
+            App::env('PRETZEL_WEBROOT'),
+            Craft::getAlias('@webroot', false),
+            Craft::getAlias('@root', false) . '/web',
+        ];
+
+        foreach ($candidates as $candidate) {
+            if ($candidate && !str_contains($candidate, '://') && is_dir($candidate)) {
+                return rtrim($candidate, '/');
+            }
+        }
+
+        throw new ServerErrorHttpException('Pretzel: unable to find the web root; set PRETZEL_WEBROOT');
     }
 
 

@@ -24,7 +24,7 @@ The key idea is that the **URL is the transform spec**, and the generated file's
 
 ## Configuration
 
-Configuration is **env-only**, read with `getenv()` in `PretzelSettingHelper` / `PretzelHelper`: `PRETZEL_PATH`, `PRETZEL_HOSTS`, `PRETZEL_CDN`, `PRETZEL_SAVE_IMG`. In devMode, `isValidHost` allows any referrer. Otherwise it checks the `Referer` host against `PRETZEL_HOSTS` and the site host.
+Configuration is **env-only**, read with `getenv()` in `PretzelSettingHelper` / `PretzelHelper`: `PRETZEL_PATH`, `PRETZEL_WEBROOT`, `PRETZEL_HOSTS`, `PRETZEL_CDN`, `PRETZEL_SAVE_IMG`. In devMode, `isValidHost` allows any referrer. Otherwise it checks the `Referer` host against `PRETZEL_HOSTS` and the site host.
 
 `models/Settings.php` and `templates/settings.twig` are not wired into `Plugin` (no `createSettingsModel` / `settingsHtml`), so they currently have no effect.
 
@@ -38,5 +38,5 @@ Found in a review; keep in mind when touching the controller or host check:
 ## Gotchas
 
 - Class and file are spelled `PretezelService` (typo is established; don't "fix" without updating the `pretzelService` component and its usages).
-- Both `saveImage` and `actionCopy` write under `@webroot`.
+- Both `saveImage` and `actionCopy` write under `PretzelSettingHelper::webRoot()`: `PRETZEL_WEBROOT`, else `@webroot` if it's a local dir (some sites alias it to a URL), else `@root/web`.
 - `actionGenerate` saves under exactly the requested URL (filename, transform string, lowercased ext) so the web server finds the static file next time. SVGs are never transformed: `actionCopy` only serves `.svg` assets, URLs have no `~` segment.

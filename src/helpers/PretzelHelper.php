@@ -88,7 +88,7 @@ class PretzelHelper
 
         $bytes = (string) $encoded;
 
-        self::writeFile(Craft::getAlias('@webroot') . $newFilePath, $bytes);
+        self::writeFile(PretzelSettingHelper::webRoot() . $newFilePath, $bytes);
 
         return $bytes;
     }
