@@ -8,6 +8,7 @@ use craft\elements\Asset;
 use craft\helpers\FileHelper;
 use Intervention\Image\Encoders\{AvifEncoder, GifEncoder, JpegEncoder, PngEncoder, WebpEncoder};
 use Intervention\Image\Interfaces\ImageInterface;
+use yii\web\ServerErrorHttpException;
 
 class PretzelHelper
 {
@@ -71,13 +72,12 @@ class PretzelHelper
 
     /**
      * Encodes the image in the format of $newFilePath's extension and writes it under the webroot.
+     *
+     * @return string The encoded image bytes, so callers don't need to read the file back
+     * @throws ServerErrorHttpException If the file can't be written
      */
-    public static function saveImage(Asset $image, ImageInterface $imageIntervention, string $newFilePath, int $quality = 90): string
+    public static function saveImage(ImageInterface $imageIntervention, string $newFilePath, int $quality = 90): string
     {
-        $fullPath = Craft::getAlias('@webroot') . $newFilePath;
-
-        FileHelper::createDirectory(dirname($fullPath));
-
         $encoded = match (strtolower(pathinfo($newFilePath, PATHINFO_EXTENSION))) {
             'png' => $imageIntervention->encode(new PngEncoder()),
             'webp' => $imageIntervention->encode(new WebpEncoder(quality: $quality)),
@@ -86,12 +86,35 @@ class PretzelHelper
             default => $imageIntervention->encode(new JpegEncoder(quality: $quality)),
         };
 
-        // write to a temp file first so a concurrent request never serves a partial image
-        $tmp = $fullPath . '.' . uniqid('', true) . '.tmp';
-        file_put_contents($tmp, (string) $encoded);
-        rename($tmp, $fullPath);
+        $bytes = (string) $encoded;
 
-        return $fullPath;
+        self::writeFile(Craft::getAlias('@webroot') . $newFilePath, $bytes);
+
+        return $bytes;
+    }
+
+    /**
+     * Writes via a temp file so a concurrent request never serves a partial file.
+     *
+     * @throws ServerErrorHttpException
+     */
+    public static function writeFile(string $fullPath, string $contents): void
+    {
+        $dir = dirname($fullPath);
+
+        FileHelper::createDirectory($dir);
+
+        $tmp = $fullPath . '.' . uniqid('', true) . '.tmp';
+
+        if (@file_put_contents($tmp, $contents) === false) {
+            throw new ServerErrorHttpException("Pretzel: unable to write {$tmp}");
+        }
+
+        if (!@rename($tmp, $fullPath)) {
+            @unlink($tmp);
+
+            throw new ServerErrorHttpException("Pretzel: unable to move image to {$fullPath}");
+        }
     }
 
     public static function ensureDimensions(array $t, Asset $asset): array
